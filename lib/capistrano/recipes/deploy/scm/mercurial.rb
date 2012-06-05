@@ -56,6 +56,18 @@ module Capistrano
 
         # Translates a tag to a changeset if needed or just returns changeset.
         def query_revision(changeset)
+          # NOTE: Using capistrano along with capistrano_rsync_with_remote_cache,
+          #   no guarantees the following works at all without it.
+
+          # Returns changeset (quoted) if changeset is set (seems to be the 'branch' or 'revision' variables in deploy.rb)
+          return "'#{changeset}'" if changeset.to_s != ''
+          # Otherwise, if changeset is not set, get the tip
+          return "tip"
+          # Not entirely sure what the below code was supposed to do originally,
+          #   but it tries to do: executing locally: "hg log -r nophpinfo --template \"{node|short}\""
+          #   which results in: abort: There is no Mercurial repository here (.hg not found)!
+          #   because a local copy of the repo doesn't exist on the deployment server.
+          #   Older versions of capistrano seemed to grab a temp copy first.
           cmd = scm :log,
                     verbose,
                     "-r #{changeset}",
