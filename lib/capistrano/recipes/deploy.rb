@@ -53,6 +53,9 @@ _cset :shared_dir,        "shared"
 _cset :shared_children,   %w(public/system log tmp/pids)
 _cset :current_dir,       "current"
 
+_cset :set_umask,         false
+_cset :umask,             "0"
+
 _cset(:releases_path)     { File.join(deploy_to, version_dir) }
 _cset(:shared_path)       { File.join(deploy_to, shared_dir) }
 _cset(:current_path)      { File.join(deploy_to, current_dir) }
@@ -186,7 +189,11 @@ namespace :deploy do
   task :setup, :except => { :no_release => true } do
     dirs = [deploy_to, releases_path, shared_path]
     dirs += shared_children.map { |d| File.join(shared_path, d.split('/').last) }
-    run "#{try_sudo} mkdir -p #{dirs.join(' ')}"
+    if fetch(:set_umask)
+      run "#{try_sudo} umask #{umask}; mkdir -p #{dirs.join(' ')}"
+    else
+      run "#{try_sudo} mkdir -p #{dirs.join(' ')}"
+    end
     run "#{try_sudo} chmod g+w #{dirs.join(' ')}" if fetch(:group_writable, true)
   end
 
